@@ -208,7 +208,7 @@ Top_Stack:
 */
 //        .set MAM_SETUP,    1
         .set MAMCR_Val,    0x00000002
-        .set MAMTIM_Val,   0x00000004
+        .set MAMTIM_Val,   0x00000003
 
 
 // Starupt Code must be linked first at Address at which it expects to run.
