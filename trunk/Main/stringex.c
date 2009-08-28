@@ -95,3 +95,32 @@ void toDec(char* buf, int in) {
 }
 
 
+void to0Dec(char* buf, int in, int len) {
+  int p=0;
+  if(in<0) {
+    buf[p]='-';p++;
+    in=-in;
+  }
+  if(in==0) {
+    for(p=0;p<len;p++)buf[p]='0';
+    buf[p]=0;
+    return;
+  }
+  char dbuf[10];
+  int i=0;
+  while(in>0) {
+    dbuf[i]=(in%10)+'0';
+    in/=10;
+    i++;
+  }
+  while(i<len && i<10) {
+    dbuf[i]='0';
+    i++;
+  }
+  for(int j=i-1;j>=0;j--) {
+    buf[p]=dbuf[j];p++;
+  }
+  buf[p]=0;
+}
+
+

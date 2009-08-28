@@ -32,6 +32,7 @@ void empty(circular* buf);
 //Built upon fill
 int fillString(circular* buf, char* in);
 int fillDec(circular* buf, int in);
+int fill0Dec(circular* buf, int in, int len);
 int fillHex(circular* buf, unsigned int in, int len);
 int fillStringn(circular *buf, char* in, int len);
 int fillShort(circular* buf, short in);
@@ -50,6 +51,8 @@ int readylen(circular* buf);
 
 char peekTail(circular* buf, int ahead);
 char peekMid(circular* buf, int ahead);
+short peekMidShort(circular* buf, int ahead);
+int peekMidInt(circular* buf, int ahead);
 char peekHead(circular* buf, int ahead);
 
 void pokeTail(circular* buf, int ahead, char poke);

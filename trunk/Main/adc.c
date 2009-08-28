@@ -1,4 +1,4 @@
-#include "LPC21xx.h"
+#include "LPC214x.h"
 #include "adc.h"
 #include "conparse.h"
 #include "armVIC.h"
@@ -55,8 +55,7 @@ static void writeADC(void) {
       fillFinishNMEA(&adcBuf);
       break;
     case ADC_SIRF:
-      fillStartSirf(&adcBuf);
-      fill(&adcBuf,0x2C);
+      fillStartSirf(&adcBuf,0x2C);
       for(int i=0;i<=8;i++) {
         if(channelActive[i]) {
           fillShort(&adcBuf,adcReadingCopy[i] & 0xFFFF);
@@ -82,7 +81,7 @@ volatile static int inAdcIsr=0;
 static void adcISR(void) {
   if(inAdcIsr) return;
   inAdcIsr=1;
-  T0IR = 1; // reset TMR0 interrupt
+  T0IR = 1; // Clear T0 interrupt on match channel 0
 
   int temp=0;
   int j;
@@ -104,21 +103,21 @@ static void adcISR(void) {
     do {
       switch(adcMask[j]) {
         case 1:
-          temp=AD0DR; //Check if channel 0 is done
+          temp=AD0GDR; //Check if channel 0 is done
           break;
         case 2:
         case 3:
-          temp=AD1DR; //Check if channel 1 is done
+          temp=AD1GDR; //Check if channel 1 is done
           break;
       }
     } while((temp & 0x80000000) == 0);
     if(adcMask[j] & 0x01) {
       AD0CR=0x00000000; //Stop AD0
-      adcReading[adcBackref[j][0]]+=(AD0DR & 0xFFC0) >> 6;
+      adcReading[adcBackref[j][0]]+=(AD0GDR & 0xFFC0) >> 6;
     }
     if(adcMask[j] & 0x02) {
       AD1CR=0x00000000; //Stop AD1
-      adcReading[adcBackref[j][1]]+=(AD1DR & 0xFFC0) >> 6;
+      adcReading[adcBackref[j][1]]+=(AD1GDR & 0xFFC0) >> 6;
     }
   }
 
@@ -162,8 +161,7 @@ void writeADCsetup() {
       fillFinishNMEA(&adcBuf);
       break;
     case ADC_SIRF:
-      fillStartSirf(&adcBuf);
-      fill(&adcBuf,0x2A); //Steal an unused output message slot;
+      fillStartSirf(&adcBuf,0x2A);
       fillShort(&adcBuf,adcFreq);
       fillShort(&adcBuf,adcBin);
       fill(&adcBuf,ADCDIV);
@@ -191,11 +189,14 @@ void startRecordADC(void) {
   // Set the address of ISR for slot 3
   VICVectAddr3 = (unsigned int)adcISR;
 
-  T0TCR = 0x00000002;  // Reset counter and prescaler
-  T0MCR = 0x00000003;  // On match reset the counter and generate interrupt
-  T0MR0 = PCLK / adcFreq;
+  T0TCR = 0x00000002;  // Reset counter and prescaler and disable timer
+  T0CTCR= 0x00000000;  // Timer 0 is to be used as a timer, not a counter
+  T0MCR = 0x00000003;  // On match 0 reset the counter and generate interrupt. All other match channels ignored
+  T0MR0 = PCLK / adcFreq;  //Match channel 0 value: When T0TC reaches this value, things happen as described above
 
-  T0PR = 0x00000000;
+  T0PR = 0x00000000;   //No prescale - 1 PCLK tick equals 1 Timer0 tick
+  T0CCR= 0x00000000;   //No capture on external input for Timer0
+  T0EMR= 0x00000000;   //No external output on matches for Timer0
 
   T0TCR = 0x00000001; // enable timer
 }

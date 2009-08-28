@@ -1,4 +1,4 @@
-#include "LPC21XX.h"
+#include "LPC214x.h"
 #include "sd_raw.h"
 #include "rootdir.h"
 #include "setup.h"
@@ -68,29 +68,29 @@ static void setupPins(void) {
   //  C    F    3    5    1    5    0    5
   // 1100 1111 0011 0101 0001 0101 0000 0101
   //  F E  D C  B A  9 8  7 6  5 4  3 2  1 0 
-  // Pin 0.00 (TXO0)  - 01 - TxD0
-  // Pin 0.01 (RXI0)  - 01 - RxD0
-  // Pin 0.02 (STAT0) - 00 - GPIO 0.02
-  // Pin 0.03 (STOP)  - 00 - GPIO 0.03
-  // Pin 0.04 (Card)  - 01 - SCK0
-  // Pin 0.05 (Card)  - 01 - MISO0
-  // Pin 0.06 (Card)  - 01 - MOSI0
-  // Pin 0.07 (Card)  - 00 - GPIO 0.07
-  // Pin 0.08 (TXO1)  - 01 - TxD1
-  // Pin 0.09 (RXI1)  - 01 - RxD1
-  // Pin 0.10 (7)     - 11 - AD1.2
-  // Pin 0.11 (STAT1) - 00 - GPIO 0.11
-  // Pin 0.12 (8)     - 11 - AD1.3
-  // Pin 0.13 (BATLV) - 11 - AD1.4
-  // Pin 0.14 (BSL)   - 00 - GPIO 0.14
-  // Pin 0.15 (NC)    - 11 - AD1.5
+  // Pin 0.00 (TXO0)     - 01 - TxD0
+  // Pin 0.01 (RXI0)     - 01 - RxD0
+  // Pin 0.02 (STAT0)    - 00 - GPIO 0.02
+  // Pin 0.03 (STOP)     - 00 - GPIO 0.03
+  // Pin 0.04 (Card SCK) - 01 - SCK0
+  // Pin 0.05 (Card DO)  - 01 - MISO0
+  // Pin 0.06 (Card DI)  - 01 - MOSI0
+  // Pin 0.07 (Card CS)  - 00 - GPIO 0.07
+  // Pin 0.08 (TXO1)     - 01 - TxD1
+  // Pin 0.09 (RXI1)     - 01 - RxD1
+  // Pin 0.10 (7)        - 11 - AD1.2
+  // Pin 0.11 (STAT1)    - 00 - GPIO 0.11
+  // Pin 0.12 (8)        - 11 - AD1.3
+  // Pin 0.13 (BATLV)    - 11 - AD1.4
+  // Pin 0.14 (BSL)      - 00 - GPIO 0.14
+  // Pin 0.15 (NC)       - 11 - AD1.5
   PINSEL0 = 0xCF351505;
 
   //  1    5    4    4    1    B    0    4
   // 0001 0101 0100 0100 0001 1011 0000 0100
   //  F E  D C  B A  9 8  7 6  5 4  3 2  1 0 
   // Pin 0.16 0 (NC)   - 00 - GPIO 0.16
-  // Pin 0.17 1 (SCK)  - 01 - CAP1.2
+  // Pin 0.17 1 (SCK)  - 01 - CAP1.2    (GPS PPS)
   // Pin 0.18 2 (MISO) - 00 - GPIO 0.18
   // Pin 0.19 3 (MOSI) - 00 - GPIO 0.19
   // Pin 0.20 4 (CS)   - 11 - EINT3
@@ -105,10 +105,12 @@ static void setupPins(void) {
   // Pin 0.29 D (2)    - 01 - AD0.2
   // Pin 0.30 E (1)    - 01 - AD0.3
   // Pin 0.31 F (LED3) - 00 - GPO only
-  PINSEL1 = 0x15441B04;
-  // Pin 2,7,11 set to out
-  IODIR0 |= 0x00000884;
-  IOSET0 = 0x00000080;
+  PINSEL1 = 0x15441804;
+
+  // Pin 0.2,0.7,0.11 set to out
+  IODIR0 =(1<<2) | (1<<7) | (1<<11);
+  // Pin 0.7 set to high
+  IOSET0 = (1<<7);
 
   S0SPCR = 0x08;  // SPI clk to be pclk/8
   S0SPCR = 0x30;  // master, msb, first clk edge, active high, no ints
@@ -140,8 +142,7 @@ static void measurePCLK(void) {
 static void writeMAMsetup(void) {
   switch(adcMode) {
     case ADC_SIRF:
-      fillStartSirf(&sdBuf);
-      fill(&sdBuf,0x17);
+      fillStartSirf(&sdBuf,0x17);
       fill(&sdBuf,MAMCR);
       fill(&sdBuf,MAMTIM);
       fillShort(&sdBuf,PLLSTAT);
@@ -149,6 +150,7 @@ static void writeMAMsetup(void) {
       fillInt(&sdBuf,CCLK);
       fillInt(&sdBuf,PCLK);
       fillFinishSirf(&sdBuf);
+      break;
     case ADC_TEXT: 
       fillString(&sdBuf,"MAM setup: MAMCR=");
       fillDec(&sdBuf,MAMCR);
@@ -191,15 +193,15 @@ static void writeMAMsetup(void) {
   }
 }
 
-char versionString[]="Logomatic Kwan v1.0 "__DATE__" "__TIME__;
+char versionString[]="Logomatic Kwan v1.1 "__DATE__" "__TIME__;
 
 static void writeVersion(void) {
   switch(adcMode) {
     case ADC_SIRF:
-      fillStartSirf(&sdBuf);
-      fill(&sdBuf,0x18);
+      fillStartSirf(&sdBuf,0x1A);
   	  fillString(&sdBuf,versionString);
       fillFinishSirf(&sdBuf);
+      break;
     case ADC_TEXT: 
       fillString(&sdBuf,versionString);
       fillShort(&sdBuf,0x0D0A);
@@ -221,12 +223,12 @@ static void writeSDinfo(void) {
   
   switch(adcMode) {
     case ADC_SIRF:
-      fillStartSirf(&sdBuf);
-      fill(&sdBuf,0x18);
+      fillStartSirf(&sdBuf,0x18);
       fill(&sdBuf,result);
       for(int i=0;i<36;i++) fill(&sdBuf,buf[i]);
   
       fillFinishSirf(&sdBuf);
+      break;
     case ADC_TEXT: 
       fillString(&sdBuf,"SD Card Setup: result=");
       fillDec(&sdBuf,result);
@@ -308,25 +310,20 @@ void setup() {
   
   debug_print("After readLogCon() - ouf.dir_entry\n");
   debug_printDE("",&ouf.dir_entry);debug_flush();
-#ifdef COMMAND_SYS  
+
   if(loadCommands()<0) blinklock(0,4);
-#endif
 
   writeVersion();
 
-#ifdef ADC_SYS
   writeADCsetup();
-#endif  
   writeMAMsetup();
   writeSDinfo();
   
-#ifdef UART_SYS 
+
   startRecordUART();
-#endif
+
   //Only set up the ADC if some channels are to be recorded  
-#ifdef ADC_SYS  
   if(nChannels>0 && adcFreq>0) startRecordADC(); 
-#endif  
   debug_print("Finished setup()\n");debug_flush();
 }
 

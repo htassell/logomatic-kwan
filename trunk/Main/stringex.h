@@ -11,6 +11,7 @@ int dtoi(char*);
 int htoi(char*);
 int stoi(char*);
 void toDec(char*, int);
+void to0Dec(char*, int, int);
 
 extern char hexDigits[];
 

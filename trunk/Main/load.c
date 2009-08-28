@@ -1,4 +1,5 @@
-#include "LPC21XX.h"
+#include <string.h>
+#include "LPC214x.h"
 #include "load.h"
 #include "loop.h"
 #include "sirfwrite.h"
@@ -7,9 +8,12 @@
 #include "conparse.h"
 #include "sdbuf.h"
 #include "setup.h"
+#include "stringex.h"
+#include "loop.h"
 
 static int lasttoc=-1;
 static int load[16];
+static int lastIdle;
 volatile static int loadMask;
 
 static void writeLoad(void) {
@@ -34,15 +38,14 @@ static void writeLoad(void) {
       fillFinishNMEA(&sdBuf);
       break;
     case ADC_SIRF:
-      fillStartSirf(&sdBuf);
-      fill(&sdBuf,0x15);
-	    fillShort(&sdBuf,YEAR);
-	    fill(&sdBuf,MONTH);
-	    fill(&sdBuf,DOM);
-	    fill(&sdBuf,HOUR);
-	    fill(&sdBuf,MIN);
-	    fill(&sdBuf,SEC);
-	    fillShort(&sdBuf,CTC);
+      fillStartSirf(&sdBuf,0x15);
+      fillShort(&sdBuf,YEAR);
+      fill(&sdBuf,MONTH);
+      fill(&sdBuf,DOM);
+      fill(&sdBuf,HOUR);
+      fill(&sdBuf,MIN);
+      fill(&sdBuf,SEC);
+      fillShort(&sdBuf,CTC);
       for(int i=0;i<16;i++) {
         fillInt(&sdBuf,load[i]);
       }
@@ -62,8 +65,10 @@ int countLoad() {
       hasLoad(LOAD_LOAD);
       load[loadMask]+=PCLK-lasttoc;
       writeLoad();
+      readyForOncePerSecond=1;
 	    result=1;
       //Reset the counters
+      lastIdle=load[0];
       for(int i=0;i<16;i++) load[i]=0;
       //Count the rest of the time in this tick
       load[loadMask]=thistoc;
@@ -85,3 +90,6 @@ void clearLoad() {
   set_light(1,OFF);
 }
 
+void sleep() {
+  PCON|=1; //idle mode
+}

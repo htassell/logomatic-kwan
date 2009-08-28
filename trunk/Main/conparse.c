@@ -24,6 +24,7 @@ int nChannels=0;
 int hasStartTime;
 int startY, startM, startD, startH, startN, startS;
 int GPSSyncMode=0;
+int powerSave=0;
 
 //Log configuration tags and default values, used to write the LogCon.txt if not present
 //and to read LogCon.txt.
@@ -33,15 +34,16 @@ static char LogConTags[]="UART0 mode\0"       //NMEA, Text, Raw, SiRF, off (anyt
                          "UART0 trigger\0"    //Trigger, same as before (Only effective in NMEA)
                          "UART0 end\0"        //Frame end character (Only effective in NMEA)
                          "UART0 size\0"        
-						 "UART0 timestamp\0"
+                         "UART0 timestamp\0"
                          "UART1 mode\0"       //NMEA, Text, Raw, SiRF, off (anything else)
                          "UART1 baud\0"  //baud code
                          "UART1 trigger\0"    //Trigger, same as before (Only effective in NMEA)
                          "UART1 end\0"        //Frame end character (Only effective in NMEA)
                          "UART1 size\0"        
-						 "UART1 timestamp\0"
-						 "Start Time\0"
-						 "GPS Sync\0"
+						             "UART1 timestamp\0"
+						             "Start Time\0"
+						             "GPS Sync\0"
+						             "Powersave\0"
                          "ADC mode\0"        //Text, Binary, SiRF, off (anything else)
                          "ADC frequency\0"   //ADC read rate, Hz
                          "ADC binning\0"     //ADC binning rate
@@ -67,6 +69,7 @@ static char LogConDefault[]="None\0"
                             "64\0"
                             "N\0"
                             "20090704000000\0"
+                            "1\0"
                             "1\0"
                             "Text\0"
                             "100\0"
@@ -94,10 +97,10 @@ static int processLine(char* keyword, char* value) {
       whichKeyword++;
       while(LogConTags[whereInTags]!=0) whereInTags++;
       whereInTags++;
-      if(LogConTags[whereInTags]==0) done=1;
+      if(LogConTags[whereInTags]==0) return 0; //Didn't find the keyword
     }
   }
-#ifdef UART_SYS
+
   if(whichKeyword<12) {
     int port=whichKeyword/6;
     int word=whichKeyword%6;
@@ -146,24 +149,24 @@ static int processLine(char* keyword, char* value) {
         timestamp[port]=(value[0]=='Y' || value[0]=='y');
         break;
     }
-  } else 
-#endif   
-  if(whichKeyword==12) {
+  } else if(whichKeyword==12) {
     startS=stoi(&value[12]);
-	value[12]=0;
-	startN=stoi(&value[10]);
-	value[10]=0;
-	startH=stoi(&value[8]);
-	value[8]=0;
-	startD=stoi(&value[6]);
-	value[6]=0;
-	startM=stoi(&value[4]);
-	value[4]=0;
-	startY=stoi(value);
-	hasStartTime=1;
+  	value[12]=0;
+	  startN=stoi(&value[10]);
+	  value[10]=0;
+	  startH=stoi(&value[8]);
+	  value[8]=0;
+	  startD=stoi(&value[6]);
+	  value[6]=0;
+	  startM=stoi(&value[4]);
+	  value[4]=0;
+	  startY=stoi(value);
+	  hasStartTime=1;
   } else if(whichKeyword==13) {
     GPSSyncMode=stoi(value);
   } else if(whichKeyword==14) {
+    powerSave=stoi(value);
+  } else if(whichKeyword==15) {
     if(0==strcasecmp(value,"NMEA")) {
       adcMode=ADC_NMEA;
     } else if(0==strcasecmp(value,"Binary")) {
@@ -175,12 +178,12 @@ static int processLine(char* keyword, char* value) {
     } else {
       adcMode=ADC_NONE;
     }
-  } else if(whichKeyword==15) {
-    adcFreq=stoi(value);
   } else if(whichKeyword==16) {
+    adcFreq=stoi(value);
+  } else if(whichKeyword==17) {
     adcBin=stoi(value);
   } else {
-    int channelNum=whichKeyword-17;
+    int channelNum=whichKeyword-18;
     if(channelNum>8) return -1;
     channelActive[channelNum]=(value[0]=='Y' || value[0]=='y');
     nChannels+=channelActive[channelNum];
@@ -203,6 +206,10 @@ int readLogCon(void) {
   keyword[0]=0;
   value[0]=0;
   int result;
+//  root_open_new(&fd,"FIRMDUMP.bin");
+//  for(int i=0;i<1024;i++) fat16_write_file(&fd,512*i,512);
+//  fat16_close_file(&fd);
+//  sd_raw_sync();
   if(root_file_exists("LOGCON.txt")) {
     result = root_open(&fd,"LOGCON.txt");
     
@@ -260,11 +267,6 @@ int readLogCon(void) {
       t++;
     }
   }
-/*
-  if(inValue) {
-    processLine(keyword,value);
-  }
-  */
   return 0;
 }
 

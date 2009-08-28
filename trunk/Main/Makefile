@@ -10,7 +10,7 @@ FLASH_TOOL = LPC12
 
 # MCU name and submodel
 MCU      = arm7tdmi-s
-SUBMDL   = LPC2138
+SUBMDL   = LPC2148
 #THUMB    = -mthumb
 
 #This is needed to run IAP function call stuff
@@ -410,7 +410,7 @@ FW.SFE: main.elf
 	@echo
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O binary $< $@
-	$(COPY) $@ g:\
+	$(COPY) $@ f:\
 
 
 # Create extended listing file from ELF output file.
