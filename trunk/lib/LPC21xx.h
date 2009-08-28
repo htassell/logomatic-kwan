@@ -166,6 +166,7 @@
 #define U0LSR          (*((volatile unsigned char *) 0xE000C014))
 #define U0MSR          (*((volatile unsigned char *) 0xE000C018))
 #define U0SCR          (*((volatile unsigned char *) 0xE000C01C))
+#define U0FDR          (*((volatile unsigned char *) 0xE000C028))
 #define U0DLL          (*((volatile unsigned char *) 0xE000C000))
 #define U0DLM          (*((volatile unsigned char *) 0xE000C004))
 
@@ -180,8 +181,23 @@
 #define U1LSR          (*((volatile unsigned char *) 0xE0010014))
 #define U1MSR          (*((volatile unsigned char *) 0xE0010018))
 #define U1SCR          (*((volatile unsigned char *) 0xE001001C))
+#define U1FDR          (*((volatile unsigned char *) 0xE0010028))
 #define U1DLL          (*((volatile unsigned char *) 0xE0010000))
 #define U1DLM          (*((volatile unsigned char *) 0xE0010004))
+
+#define URBR(port)          (*((volatile unsigned char *) (0xE000C000+(port)*0x4000)))
+#define UTHR(port)          (*((volatile unsigned char *) (0xE000C000+(port)*0x4000)))
+#define UIER(port)          (*((volatile unsigned char *) (0xE000C004+(port)*0x4000)))
+#define UIIR(port)          (*((volatile unsigned char *) (0xE000C008+(port)*0x4000)))
+#define UFCR(port)          (*((volatile unsigned char *) (0xE000C008+(port)*0x4000)))
+#define ULCR(port)          (*((volatile unsigned char *) (0xE000C00C+(port)*0x4000)))
+#define UMCR(port)          (*((volatile unsigned char *) (0xE000C010+(port)*0x4000)))
+#define ULSR(port)          (*((volatile unsigned char *) (0xE000C014+(port)*0x4000)))
+#define UMSR(port)          (*((volatile unsigned char *) (0xE000C018+(port)*0x4000)))
+#define USCR(port)          (*((volatile unsigned char *) (0xE000C01C+(port)*0x4000)))
+#define UFDR(port)          (*((volatile unsigned char *) (0xE000C028+(port)*0x4000)))
+#define UDLL(port)          (*((volatile unsigned char *) (0xE000C000+(port)*0x4000)))
+#define UDLM(port)          (*((volatile unsigned char *) (0xE000C004+(port)*0x4000)))
 
 /* I2C Interface */
 #define I2CONSET       (*((volatile unsigned char *) 0xE001C000))
@@ -248,6 +264,9 @@
 /* A/D Converter 1 (AD1) */
 #define AD1CR          (*((volatile unsigned long *) 0xE0060000))
 #define AD1DR          (*((volatile unsigned long *) 0xE0060004))
+
+#define ADCR(port)           (*((volatile unsigned long *) 0xE0034000+port*0x2C000))
+#define ADDR(port)           (*((volatile unsigned long *) 0xE0034004+port*0x2C000))
 
 /* D/A Converter  */
 #define DACR          (*((volatile unsigned long *) 0xE006C000))
