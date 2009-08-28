@@ -925,7 +925,7 @@ int16_t fat16_write_file(struct fat16_file_struct* fd, const uint8_t* buffer, ui
     if(fd->magic_cookie!=FD_MAGIC_COOKIE) return -7;
     #if FAT16_WRITE_SUPPORT
         /* check arguments */
-        if(!fd || !buffer || buffer_len < 1)
+        if(!fd || buffer_len < 1)
             return -1;
         if(fd->pos > fd->dir_entry.file_size)
             return -2;

@@ -2,9 +2,14 @@
 #include "circular.h"
 #include "uart.h"
 
-void fillStartSirf(circular* buf) {
+void fillStartSirfRaw(circular* buf) {
   fillShort(buf,0xA0A2);
   fillShort(buf,0);
+}
+
+void fillStartSirf(circular* buf, char PktId) {
+  fillStartSirfRaw(buf);
+  fill(buf,PktId);
 }
 
 static void fillFinishSirfCore(circular* buf) {

@@ -1,4 +1,4 @@
-#include "LPC21XX.h"
+#include "LPC214x.h"
 #include "armVIC.h"
 #include "uart.h"
 #include "main.h"
@@ -60,7 +60,13 @@ static void UARTISR(int port) {
       if(isFrameEnd(port) || unreadylen(&uartbuf[port])>=912) {
         //But not after this character
         uartInPkt[port]=0;
-        parseSirf(uartMode[port],&uartbuf[port]);
+        if(GPSSyncMode>0) { //Only parse the packet if we need to
+          if(uartMode[port]==UART_SIRF) {
+            parseSirf(&uartbuf[port]);
+          } else if(uartMode[port]==UART_NMEA) {
+            parseNmea(&uartbuf[port]);
+          }
+        }
         mark(&uartbuf[port]);
       }
     }
@@ -127,8 +133,8 @@ void setup_uart(int port, int setbaud, int want_ints) {
       fillDec(&uartbuf[port],UDL);
       fill(&uartbuf[port],',');
       fillDec(&uartbuf[port],UFDR(port));
-	  fillShort(&uartbuf[port],0x0D0A);
-	  mark(&uartbuf[port]);
+      fillShort(&uartbuf[port],0x0D0A);
+      mark(&uartbuf[port]);
       break;
     case ADC_NMEA:
       fillStartNMEA(&uartbuf[port],'U');
@@ -144,8 +150,7 @@ void setup_uart(int port, int setbaud, int want_ints) {
       fillFinishNMEA(&uartbuf[port]);
       break;
     case ADC_SIRF:
-      fillStartSirf(&uartbuf[port]);
-      fill(&uartbuf[port],0x2B);
+      fillStartSirf(&uartbuf[port],0x2B);
       fill(&uartbuf[port],port & 0xFF);
       fillInt(&uartbuf[port],setbaud);
       fillShort(&uartbuf[port],UDL);
@@ -221,8 +226,7 @@ static int countCharBaud(int port, int trybaud, unsigned int* chars, unsigned in
       fillFinishNMEA(&uartbuf[port]);
       break;
     case ADC_SIRF:
-      fillStartSirf(&uartbuf[port]);
-      fill(&uartbuf[port],0x16);
+      fillStartSirf(&uartbuf[port],0x16);
       fill(&uartbuf[port],port);
       fillInt(&uartbuf[port],trybaud);
       fillInt(&uartbuf[port],*chars);

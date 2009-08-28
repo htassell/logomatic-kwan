@@ -16,6 +16,7 @@ extern int nChannels;
 extern int hasStartTime;
 extern int startY, startM, startD, startH, startN, startS;
 extern int GPSSyncMode;
+extern int powerSave;
 
 int readLogCon(void);
 

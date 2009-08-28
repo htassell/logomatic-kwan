@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "circular.h"
 #include "stringex.h"
+#include "conparse.h"
+#include "nmeawrite.h"
 
 int isFull(circular *buf) {
   return (buf->head+1)%1024==buf->tail;
@@ -39,25 +41,16 @@ int fillString(circular* buf, char* in) {
 }
 
 int fillDec(circular* buf, int in) {
-  if(in<0) {
-    int result=fill(buf,'-');
-    if(result<0) return result;
-    in=-in;
-  }
-  if(in==0) {
-    return fill(buf,'0');
-  }
   char dbuf[10];
-  int i=0;
-  while(in>0) {
-    dbuf[i]=(in%10)+'0';
-    in/=10;
-    i++;
-  }
-  for(int j=i-1;j>=0;j--) {
-    int result=fill(buf,dbuf[j]);
-    if(result<0) return result;
-  }
+  toDec(dbuf,in);
+  fillString(buf,dbuf);
+  return 0;
+}
+
+int fill0Dec(circular* buf, int in, int len) {
+  char dbuf[10];
+  to0Dec(dbuf,in,len);
+  fillString(buf,dbuf);
   return 0;
 }
 
@@ -98,6 +91,14 @@ char peekMid(circular* buf, int pos) {
   return buf->buf[pos];
 }
 
+short peekMidShort(circular* buf, int pos) {
+  return (((short)peekMid(buf,pos))<<8) | peekMid(buf,pos+1);
+}
+
+int peekMidInt(circular* buf, int pos) {
+  return (((int)peekMidShort(buf,pos))<<16) | peekMidShort(buf,pos+2);
+}
+  
 char peekHead(circular* buf, int pos) {
   pos+=buf->head;
   pos&=0x3FF;
@@ -146,9 +147,28 @@ int readylen(circular* buf) {
   return m-t;
 }
 
+void fillError(circular* to, char* msg, unsigned int a, unsigned int b) {
+  switch(adcMode) {
+    case ADC_NMEA:
+	  fillStartNMEA(to,'E');
+	  fillString(to,msg);
+	  fill(to,' ');
+	  fillHex(to,a,8);
+	  fill(to,' ');
+	  fillHex(to,b,8);
+	  fillFinishNMEA(to);
+	  break;
+  }
+}
+
 int drain(circular* from, circular* to) {
   while(readylen(from)>0) {
-    if(isFull(to)) return -1;
+    if(isFull(to)) {
+	  empty(to);
+	  empty(from);
+	  fillError(to,"Buffer full",from,to);
+	  return -1;
+	}
     fill(to,get(from));
   }
   mark(to);

@@ -9,5 +9,6 @@
 int countLoad(void);
 void hasLoad(char task);
 void clearLoad(void);
+void resetLoad(void);
 
 #endif

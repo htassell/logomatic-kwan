@@ -12,7 +12,7 @@
 
 #ifdef COMMAND_SYS
 
-int loops;
+static int loops=0;
 
 #define COMMAND_NUM 10
 
@@ -156,7 +156,7 @@ void writeCommand() {
     if((commandAt[j]>0) && (!commandFired[j]) && (loops>=commandAt[j])) {
 	    commandFired[j]=1;
       if('S'==commandType[j]) {
-        fillStartSirf(&sdBuf);
+        fillStartSirfRaw(&sdBuf);
       } else if('N'==commandType[j]) {
         fillStartNMEAraw(&sdBuf);
       }
@@ -170,6 +170,7 @@ void writeCommand() {
       }
     }
   }
+  loops++;
 }							 
 #endif  
 
